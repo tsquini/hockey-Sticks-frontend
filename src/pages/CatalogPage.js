@@ -7,35 +7,56 @@ const CATEGORY_LABELS = { youth: 'Youth', intermediate: 'Intermediate', senior: 
 const CATEGORY_ORDER = ['youth', 'intermediate', 'senior'];
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f0f0f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='13' fill='%23aeaeb2'%3ENo image%3C/text%3E%3C/svg%3E";
 
-function FilterBar({ filters, setFilters, allFlex }) {
+function FilterBar({ filters, setFilters, availableCategories, availableFlex }) {
   return (
     <div className="filter-bar">
       <div className="filter-group">
         <span className="filter-label">Category</span>
         <div className="filter-pills">
-          {['all', ...CATEGORY_ORDER].map(cat => (
-            <button key={cat} className={`filter-pill ${filters.category === cat ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, category: cat }))}>
-              {cat === 'all' ? 'All' : CATEGORY_LABELS[cat]}
+          <button
+            className={`filter-pill ${filters.category === 'all' ? 'active' : ''}`}
+            onClick={() => setFilters(f => ({ ...f, category: 'all' }))}
+          >All</button>
+          {CATEGORY_ORDER.map(cat => (
+            <button
+              key={cat}
+              className={`filter-pill ${filters.category === cat ? 'active' : ''} ${!availableCategories.includes(cat) ? 'dimmed' : ''}`}
+              onClick={() => availableCategories.includes(cat) && setFilters(f => ({ ...f, category: cat }))}
+            >
+              {CATEGORY_LABELS[cat]}
             </button>
           ))}
         </div>
       </div>
+
       <div className="filter-group">
         <span className="filter-label">Hand</span>
         <div className="filter-pills">
           {['all', 'left', 'right'].map(h => (
-            <button key={h} className={`filter-pill ${filters.hand === h ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, hand: h }))}>
+            <button
+              key={h}
+              className={`filter-pill ${filters.hand === h ? 'active' : ''}`}
+              onClick={() => setFilters(f => ({ ...f, hand: h }))}
+            >
               {h === 'all' ? 'All' : h.charAt(0).toUpperCase() + h.slice(1)}
             </button>
           ))}
         </div>
       </div>
+
       <div className="filter-group">
         <span className="filter-label">Flex</span>
         <div className="filter-pills">
-          <button className={`filter-pill ${filters.flex === 'all' ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, flex: 'all' }))}>All</button>
-          {allFlex.map(flex => (
-            <button key={flex} className={`filter-pill ${filters.flex === flex ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, flex }))}>
+          <button
+            className={`filter-pill ${filters.flex === 'all' ? 'active' : ''}`}
+            onClick={() => setFilters(f => ({ ...f, flex: 'all' }))}
+          >All</button>
+          {availableFlex.map(flex => (
+            <button
+              key={flex}
+              className={`filter-pill ${filters.flex === flex ? 'active' : ''}`}
+              onClick={() => setFilters(f => ({ ...f, flex }))}
+            >
               {flex}
             </button>
           ))}
@@ -50,9 +71,14 @@ function VariantSelector({ variants, selected, onSelect }) {
   return (
     <div className="variant-selector">
       {variants.map(v => (
-        <button key={v.id} className={`variant-btn ${selected?.id === v.id ? 'active' : ''} ${v.stock_quantity === 0 ? 'out' : ''}`} onClick={() => onSelect(v)} disabled={v.stock_quantity === 0}>
+        <button
+          key={v.id}
+          className={`variant-btn ${selected?.id === v.id ? 'active' : ''} ${v.stock_quantity === 0 ? 'out' : ''}`}
+          onClick={() => onSelect(v)}
+          disabled={v.stock_quantity === 0}
+        >
           <span className="variant-flex">{v.flex}</span>
-          <span className="variant-detail">{v.hand[0].toUpperCase()} · {v.blade_curve}</span>
+          <span className="variant-detail">{v.hand[0].toUpperCase() === "L" ? "Left" : "Right"} · {v.blade_curve}</span>
           {v.stock_quantity === 0 && <span className="variant-oos">Out</span>}
         </button>
       ))}
@@ -62,15 +88,20 @@ function VariantSelector({ variants, selected, onSelect }) {
 
 function ProductCard({ product, activeFilters }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
+
   const visibleVariants = useMemo(() => product.variants.filter(v => {
     if (activeFilters.hand !== 'all' && v.hand !== activeFilters.hand) return false;
-    if (activeFilters.flex !== 'all' && v.flex !== activeFilters.flex) return false;
+    if (activeFilters.flex !== 'all' && String(v.flex) !== String(activeFilters.flex)) return false;
     return true;
   }), [product.variants, activeFilters]);
 
   useEffect(() => {
     if (visibleVariants.length > 0) {
-      setSelectedVariant(v => (v && visibleVariants.find(vv => vv.id === v.id)) ? v : (visibleVariants.find(vv => vv.stock_quantity > 0) || visibleVariants[0]));
+      setSelectedVariant(v =>
+        (v && visibleVariants.find(vv => vv.id === v.id))
+          ? v
+          : (visibleVariants.find(vv => vv.stock_quantity > 0) || visibleVariants[0])
+      );
     } else {
       setSelectedVariant(null);
     }
@@ -87,12 +118,33 @@ function ProductCard({ product, activeFilters }) {
         <p className="product-brand">{product.brand}</p>
         <h3 className="product-name">{product.name}</h3>
         <p className="product-model">{product.model}</p>
-        <div className="product-price">{selectedVariant ? `$${parseFloat(selectedVariant.price).toFixed(2)}` : '—'}</div>
+        <div className="product-pricing">
+          {product.retail_price && (
+            <div className="price-retail">${parseFloat(product.retail_price).toFixed(2)}</div>
+          )}
+          {product.team_price && product.bulk_min_quantity && (
+            <>
+              <div className="price-bulk">${parseFloat(product.team_price).toFixed(2)}</div>
+              <div className="price-bulk-label">{product.bulk_min_quantity}+ units to unlock bulk price</div>
+              <div className="bulk-progress-wrap">
+                <div className="bulk-progress-bar">
+                  <div className="bulk-progress-fill" style={{ width: `${Math.min(100, Math.round(((product.bulk_ordered || 0) / product.bulk_min_quantity) * 100))}%` }} />
+                </div>
+                <div className="bulk-progress-label">
+                  {product.bulk_ordered || 0} of {product.bulk_min_quantity} ordered
+                </div>
+              </div>
+            </>
+          )}
+        </div>
         <div className="product-variants-section">
           <p className="variants-heading">Select Configuration</p>
           <VariantSelector variants={visibleVariants} selected={selectedVariant} onSelect={setSelectedVariant} />
         </div>
-        <button className="add-to-cart-btn" disabled={!selectedVariant || selectedVariant.stock_quantity === 0}>
+        <button
+          className="add-to-cart-btn"
+          disabled={!selectedVariant || selectedVariant.stock_quantity === 0}
+        >
           {!selectedVariant || selectedVariant.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
         </button>
       </div>
@@ -114,24 +166,62 @@ export default function CatalogPage() {
 
   function handleSignOut() { clearTeamSession(); navigate('/'); }
 
-  const allFlex = useMemo(() => {
+  // Flex values available given current category + hand filters (ignoring flex filter itself)
+  const availableFlex = useMemo(() => {
     const s = new Set();
-    products.forEach(p => p.variants.forEach(v => s.add(v.flex)));
-    return [...s].sort((a, b) => a - b);
-  }, [products]);
+    products.forEach(p => {
+      if (filters.category !== 'all' && p.category !== filters.category) return;
+      p.variants.forEach(v => {
+        if (filters.hand !== 'all' && v.hand !== filters.hand) return;
+        s.add(v.flex);
+      });
+    });
+    return [...s].sort((a, b) => Number(a) - Number(b));
+  }, [products, filters.category, filters.hand]);
+
+  // Categories available given current flex + hand filters (ignoring category filter itself)
+  const availableCategories = useMemo(() => {
+    const cats = new Set();
+    products.forEach(p => {
+      const matches = p.variants.some(v => {
+        if (filters.hand !== 'all' && v.hand !== filters.hand) return false;
+        if (filters.flex !== 'all' && String(v.flex) !== String(filters.flex)) return false;
+        return true;
+      });
+      if (matches) cats.add(p.category);
+    });
+    return [...cats];
+  }, [products, filters.flex, filters.hand]);
+
+  // Auto-clear category if it becomes unavailable
+  useEffect(() => {
+    if (filters.category !== 'all' && !availableCategories.includes(filters.category)) {
+      setFilters(f => ({ ...f, category: 'all' }));
+    }
+  }, [availableCategories, filters.category]);
+
+  // Auto-clear flex if it becomes unavailable
+  useEffect(() => {
+    if (filters.flex !== 'all' && !availableFlex.includes(filters.flex)) {
+      setFilters(f => ({ ...f, flex: 'all' }));
+    }
+  }, [availableFlex, filters.flex]);
 
   const filtered = useMemo(() => products.filter(p => {
     if (filters.category !== 'all' && p.category !== filters.category) return false;
     return p.variants.some(v => {
       if (filters.hand !== 'all' && v.hand !== filters.hand) return false;
-      if (filters.flex !== 'all' && v.flex !== filters.flex) return false;
+      if (filters.flex !== 'all' && String(v.flex) !== String(filters.flex)) return false;
       return true;
     });
   }), [products, filters]);
 
   const grouped = useMemo(() => {
     const g = {};
-    CATEGORY_ORDER.forEach(cat => { const items = filtered.filter(p => p.category === cat); if (items.length) g[cat] = items; });
+    CATEGORY_ORDER.forEach(cat => {
+      const items = filtered.filter(p => p.category === cat);
+      if (items.length) g[cat] = items;
+    });
     return g;
   }, [filtered]);
 
@@ -155,7 +245,9 @@ export default function CatalogPage() {
         .filter-pill { padding: 5px 14px; border-radius: 100px; border: 1.5px solid #e0e0e5; background: #fff; font-size: 13px; font-weight: 500; color: #3a3a3c; cursor: pointer; transition: all 0.12s; font-family: inherit; }
         .filter-pill:hover { border-color: #1a1a2e; color: #1a1a2e; }
         .filter-pill.active { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
-        .catalog-body { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+        .filter-pill.dimmed { opacity: 0.35; cursor: not-allowed; }
+        .filter-pill.dimmed:hover { border-color: #e0e0e5; color: #3a3a3c; }
+        .catalog-body { padding: 40px 24px 80px; }
         .catalog-loading, .catalog-error { text-align: center; padding: 80px 24px; color: #6e6e73; font-size: 15px; }
         .catalog-error { color: #c0392b; }
         .category-section { margin-bottom: 56px; }
@@ -169,20 +261,28 @@ export default function CatalogPage() {
         .product-info { padding: 20px; display: flex; flex-direction: column; flex: 1; }
         .product-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #aeaeb2; margin-bottom: 4px; }
         .product-name { font-size: 17px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.2px; margin-bottom: 2px; }
-        .product-model { font-size: 13px; color: #6e6e73; margin-bottom: 12px; }
-        .product-price { font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.3px; margin-bottom: 16px; }
+        .product-model { font-size: 13px; color: #6e6e73; margin-bottom: 8px; }
+        .product-pricing { margin-bottom: 14px; }
+        .price-retail { font-size: 13px; font-weight: 500; color: #aeaeb2; text-decoration: line-through; line-height: 1.2; }
+        .price-bulk { font-size: 24px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.3px; margin-top: 2px; }
+        .price-bulk-label { font-size: 12px; color: #2e7d32; font-weight: 600; margin-bottom: 8px; }
+        .bulk-progress-wrap { margin-top: 6px; }
+        .bulk-progress-bar { height: 6px; background: #e0e0e5; border-radius: 100px; overflow: hidden; margin-bottom: 4px; }
+        .bulk-progress-fill { height: 100%; background: #0071e3; border-radius: 100px; transition: width 0.4s ease; }
+        .bulk-progress-label { font-size: 11px; color: #6e6e73; font-weight: 500; }
+        .bulk-unlocked { color: #2e7d32; font-weight: 700; }
         .product-variants-section { margin-bottom: 16px; flex: 1; }
         .variants-heading { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #aeaeb2; margin-bottom: 8px; }
-        .variant-selector { display: flex; flex-wrap: wrap; gap: 6px; }
-        .variant-btn { padding: 6px 10px; border-radius: 8px; border: 1.5px solid #e0e0e5; background: #fff; cursor: pointer; font-family: inherit; text-align: left; transition: all 0.12s; position: relative; }
+        .variant-selector { display: flex; flex-direction: column; gap: 6px; }
+        .variant-btn { padding: 10px 14px; border-radius: 8px; border: 1.5px solid #e0e0e5; background: #fff; cursor: pointer; font-family: inherit; transition: all 0.12s; position: relative; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
         .variant-btn:hover:not(:disabled) { border-color: #1a1a2e; }
         .variant-btn.active { background: #1a1a2e; border-color: #1a1a2e; }
-        .variant-btn.active .variant-flex, .variant-btn.active .variant-detail { color: #fff; }
+        .variant-btn.active .variant-flex, .variant-btn.active .variant-detail { color: #fff; } .variant-btn.active .variant-curve { color: #fff; }
         .variant-btn.out { opacity: 0.45; cursor: not-allowed; }
-        .variant-flex { display: block; font-size: 15px; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
-        .variant-detail { display: block; font-size: 11px; color: #6e6e73; line-height: 1.2; }
+        .variant-flex { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+        .variant-detail { font-size: 15px; color: #6e6e73; margin-left: auto; text-align: right; }
         .variant-oos { position: absolute; top: 3px; right: 4px; font-size: 9px; font-weight: 700; color: #c0392b; letter-spacing: 0.05em; text-transform: uppercase; }
-        .add-to-cart-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; background: #1a1a2e; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s, transform 0.1s; }
+        .add-to-cart-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; background: #0071e3; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s, transform 0.1s; }
         .add-to-cart-btn:hover:not(:disabled) { opacity: 0.85; }
         .add-to-cart-btn:active:not(:disabled) { transform: scale(0.98); }
         .add-to-cart-btn:disabled { background: #e0e0e5; color: #aeaeb2; cursor: not-allowed; }
@@ -203,11 +303,20 @@ export default function CatalogPage() {
           </div>
           <button className="signout-btn" onClick={handleSignOut}>Sign out</button>
         </header>
-        <FilterBar filters={filters} setFilters={setFilters} allFlex={allFlex} />
+
+        <FilterBar
+          filters={filters}
+          setFilters={setFilters}
+          availableCategories={availableCategories}
+          availableFlex={availableFlex}
+        />
+
         <div className="catalog-body">
           {loading && <div className="catalog-loading">Loading products…</div>}
           {error && <div className="catalog-error">{error}</div>}
-          {!loading && !error && Object.keys(grouped).length === 0 && <div className="empty-state">No products match your filters.</div>}
+          {!loading && !error && Object.keys(grouped).length === 0 && (
+            <div className="empty-state">No products match your filters.</div>
+          )}
           {!loading && !error && Object.entries(grouped).map(([cat, items]) => (
             <div key={cat} className="category-section">
               <h2 className="category-heading">
