@@ -193,6 +193,7 @@ export default function CatalogPage() {
     products.forEach(p => {
       if (filters.category !== 'all' && p.category !== filters.category) return;
       if (filters.stick_type !== 'all' && p.stick_type !== filters.stick_type) return;
+      if (filters.brand !== 'all' && p.brand !== filters.brand) return;
       p.variants.forEach(v => {
         if (filters.hand !== 'all' && v.hand !== filters.hand) return;
         const num = Number(v.flex);
@@ -202,18 +203,24 @@ export default function CatalogPage() {
       });
     });
     return [...s].sort((a, b) => Number(a) - Number(b));
-  }, [products, filters.category, filters.hand, filters.stick_type]);
+  }, [products, filters.category, filters.hand, filters.stick_type, filters.brand]);
 
   const allBrands = useMemo(() => {
     const s = new Set();
-    products.forEach(p => s.add(p.brand));
+    products.forEach(p => {
+      if (filters.stick_type !== 'all' && p.stick_type !== filters.stick_type) return;
+      if (filters.category !== 'all' && p.category !== filters.category) return;
+      s.add(p.brand);
+    });
     return [...s].sort();
-  }, [products]);
+  }, [products, filters.stick_type, filters.category]);
 
   // Categories available given current flex + hand filters (ignoring category filter itself)
   const availableCategories = useMemo(() => {
     const cats = new Set();
     products.forEach(p => {
+      if (filters.brand !== 'all' && p.brand !== filters.brand) return;
+      if (filters.stick_type !== 'all' && p.stick_type !== filters.stick_type) return;
       const matches = p.variants.some(v => {
         if (filters.hand !== 'all' && v.hand !== filters.hand) return false;
         if (filters.flex !== 'all' && String(v.flex) !== String(filters.flex)) return false;
@@ -222,7 +229,7 @@ export default function CatalogPage() {
       if (matches) cats.add(p.category);
     });
     return [...cats];
-  }, [products, filters.flex, filters.hand]);
+  }, [products, filters.flex, filters.hand, filters.brand, filters.stick_type]);
 
   // Auto-clear category if it becomes unavailable
   useEffect(() => {
