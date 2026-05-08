@@ -56,7 +56,7 @@ function FilterBar({ filters, setFilters, availableCategories, availableFlex }) 
       </div>
 
       <div className="filter-group">
-        <span className="filter-label">Flex</span>
+        <span className="filter-label">{filters.stick_type === 'goalie' ? 'Size' : 'Flex'}</span>
         <div className="filter-pills">
           <button
             className={`filter-pill ${filters.flex === 'all' ? 'active' : ''}`}
@@ -88,7 +88,7 @@ function VariantSelector({ variants, selected, onSelect }) {
           onClick={() => onSelect(v)}
           disabled={v.stock_quantity === 0}
         >
-          <span className="variant-flex">{v.flex}</span>
+          <span className="variant-flex">{v.flex}{product.stick_type !== 'goalie' ? '' : ''}</span>
           <span className="variant-detail">{v.hand[0].toUpperCase() === "L" ? "Left" : "Right"} · {v.blade_curve}</span>
           {v.stock_quantity === 0 && <span className="variant-oos">Out</span>}
         </button>
@@ -150,7 +150,7 @@ function ProductCard({ product, activeFilters, onAddToCart }) {
           )}
         </div>
         <div className="product-variants-section">
-          <p className="variants-heading">Select Configuration</p>
+          <p className="variants-heading">{product.stick_type === 'goalie' ? 'Select Size & Curve' : 'Select Flex & Curve'}</p>
           <VariantSelector variants={visibleVariants} selected={selectedVariant} onSelect={setSelectedVariant} />
         </div>
         <button
