@@ -12,6 +12,16 @@ function FilterBar({ filters, setFilters, availableCategories, availableFlex }) 
   return (
     <div className="filter-bar">
       <div className="filter-group">
+        <span className="filter-label">Type</span>
+        <div className="filter-pills">
+          {['all', 'player', 'goalie'].map(t => (
+            <button key={t} className={} onClick={() => setFilters(f => ({ ...f, stick_type: t }))}>
+              {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="filter-group">
         <span className="filter-label">Category</span>
         <div className="filter-pills">
           <button
@@ -159,7 +169,7 @@ export default function CatalogPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({ category: 'all', hand: 'all', flex: 'all' });
+  const [filters, setFilters] = useState({ category: 'all', hand: 'all', flex: 'all', stick_type: 'all' });
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
@@ -229,6 +239,7 @@ export default function CatalogPage() {
 
   const filtered = useMemo(() => products.filter(p => {
     if (filters.category !== 'all' && p.category !== filters.category) return false;
+    if (filters.stick_type !== 'all' && p.stick_type !== filters.stick_type) return false;
     return p.variants.some(v => {
       if (filters.hand !== 'all' && v.hand !== filters.hand) return false;
       if (filters.flex !== 'all' && String(v.flex) !== String(filters.flex)) return false;
