@@ -8,69 +8,60 @@ const CATEGORY_LABELS = { youth: 'Youth', intermediate: 'Intermediate', senior: 
 const CATEGORY_ORDER = ['youth', 'intermediate', 'senior'];
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f0f0f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='13' fill='%23aeaeb2'%3ENo image%3C/text%3E%3C/svg%3E";
 
-function FilterBar({ filters, setFilters, availableCategories, availableFlex }) {
+function FilterBar({ filters, setFilters, availableCategories, availableFlex, allBrands }) {
   return (
     <div className="filter-bar">
-      <div className="filter-group">
-        <span className="filter-label">Type</span>
-        <div className="filter-pills">
-          {['all', 'player', 'goalie'].map(t => (
-            <button key={t} className={`filter-pill ${filters.stick_type === t ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, stick_type: t }))}>
-              {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
-          ))}
+      <div className="filter-row">
+        <div className="filter-group">
+          <span className="filter-label">Brand</span>
+          <div className="filter-pills">
+            <button className={`filter-pill ${filters.brand === 'all' ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, brand: 'all' }))}>All</button>
+            {allBrands.map(b => (
+              <button key={b} className={`filter-pill ${filters.brand === b ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, brand: b }))}>{b}</button>
+            ))}
+          </div>
+        </div>
+        <div className="filter-group">
+          <span className="filter-label">Type</span>
+          <div className="filter-pills">
+            {['all', 'player', 'goalie'].map(t => (
+              <button key={t} className={`filter-pill ${filters.stick_type === t ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, stick_type: t }))}>
+                {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="filter-group">
+          <span className="filter-label">Category</span>
+          <div className="filter-pills">
+            <button className={`filter-pill ${filters.category === 'all' ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, category: 'all' }))}>All</button>
+            {CATEGORY_ORDER.map(cat => (
+              <button key={cat} className={`filter-pill ${filters.category === cat ? 'active' : ''} ${!availableCategories.includes(cat) ? 'dimmed' : ''}`} onClick={() => availableCategories.includes(cat) && setFilters(f => ({ ...f, category: cat }))}>
+                {CATEGORY_LABELS[cat]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="filter-group">
-        <span className="filter-label">Category</span>
-        <div className="filter-pills">
-          <button
-            className={`filter-pill ${filters.category === 'all' ? 'active' : ''}`}
-            onClick={() => setFilters(f => ({ ...f, category: 'all' }))}
-          >All</button>
-          {CATEGORY_ORDER.map(cat => (
-            <button
-              key={cat}
-              className={`filter-pill ${filters.category === cat ? 'active' : ''} ${!availableCategories.includes(cat) ? 'dimmed' : ''}`}
-              onClick={() => availableCategories.includes(cat) && setFilters(f => ({ ...f, category: cat }))}
-            >
-              {CATEGORY_LABELS[cat]}
-            </button>
-          ))}
+      <div className="filter-row">
+        <div className="filter-group">
+          <span className="filter-label">Hand</span>
+          <div className="filter-pills">
+            {['all', 'left', 'right'].map(h => (
+              <button key={h} className={`filter-pill ${filters.hand === h ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, hand: h }))}>
+                {h === 'all' ? 'All' : h.charAt(0).toUpperCase() + h.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="filter-group">
-        <span className="filter-label">Hand</span>
-        <div className="filter-pills">
-          {['all', 'left', 'right'].map(h => (
-            <button
-              key={h}
-              className={`filter-pill ${filters.hand === h ? 'active' : ''}`}
-              onClick={() => setFilters(f => ({ ...f, hand: h }))}
-            >
-              {h === 'all' ? 'All' : h.charAt(0).toUpperCase() + h.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="filter-group">
-        <span className="filter-label">{filters.stick_type === 'goalie' ? 'Size' : filters.stick_type === 'player' ? 'Flex' : 'Flex / Size'}</span>
-        <div className="filter-pills">
-          <button
-            className={`filter-pill ${filters.flex === 'all' ? 'active' : ''}`}
-            onClick={() => setFilters(f => ({ ...f, flex: 'all' }))}
-          >All</button>
-          {availableFlex.map(flex => (
-            <button
-              key={flex}
-              className={`filter-pill ${filters.flex === flex ? 'active' : ''}`}
-              onClick={() => setFilters(f => ({ ...f, flex }))}
-            >
-              {flex}
-            </button>
-          ))}
+        <div className="filter-group">
+          <span className="filter-label">{filters.stick_type === 'goalie' ? 'Size' : filters.stick_type === 'player' ? 'Flex' : 'Flex / Size'}</span>
+          <div className="filter-pills">
+            <button className={`filter-pill ${filters.flex === 'all' ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, flex: 'all' }))}>All</button>
+            {availableFlex.map(flex => (
+              <button key={flex} className={`filter-pill ${filters.flex === flex ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, flex }))}>{flex}</button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
