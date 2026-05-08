@@ -252,7 +252,7 @@ export default function CatalogPage() {
         .catalog-root { min-height: 100vh; }
         .catalog-header { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.07); position: sticky; top: 0; z-index: 100; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
         .header-left { display: flex; align-items: center; gap: 10px; }
-        .header-logo { width: 32px; height: 32px; background: #1a1a2e; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .header-logo { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .header-logo svg { width: 18px; height: 18px; }
         .header-team { font-size: 15px; font-weight: 600; color: #1a1a2e; }
         .signout-btn { font-size: 13px; color: #6e6e73; background: none; border: none; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; transition: background 0.12s; }
@@ -315,11 +315,13 @@ export default function CatalogPage() {
         <header className="catalog-header">
           <div className="header-left">
             <div className="header-logo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19 C4 19 8 13 12 13 C16 13 20 19 20 19" />
-                <path d="M2 17 L22 17" />
-                <circle cx="12" cy="8" r="3" />
-              </svg>
+              {team && team.logo_url
+                ? <img src={process.env.REACT_APP_API_URL + team.logo_url} alt={team.name} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                : <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19 C4 19 8 13 12 13 C16 13 20 19 20 19" />
+                    <path d="M2 17 L22 17" />
+                    <circle cx="12" cy="8" r="3" />
+                  </svg>}
             </div>
             <span className="header-team">{team?.name || 'Team Store'}</span>
           </div>
