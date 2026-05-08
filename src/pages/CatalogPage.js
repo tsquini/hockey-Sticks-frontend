@@ -280,7 +280,7 @@ export default function CatalogPage() {
         .filter-group { display: flex; align-items: center; gap: 10px; }
         .filter-label { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #aeaeb2; white-space: nowrap; }
         .filter-pills { display: flex; flex-wrap: wrap; gap: 6px; }
-        .filter-pill { padding: 5px 14px; border-radius: 100px; border: 1.5px solid #e0e0e5; background: #fff; font-size: 13px; font-weight: 500; color: #3a3a3c; cursor: pointer; transition: all 0.12s; font-family: inherit; }
+        .filter-pill { padding: 2px .6vw; border-radius: 100px; border: 1.5px solid #e0e0e5; background: #fff; font-size: 12px; font-weight: 500; color: #3a3a3c; cursor: pointer; transition: all 0.12s; font-family: inherit; }
         .filter-pill:hover { border-color: #1a1a2e; color: #1a1a2e; }
         .filter-pill.active { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
         .filter-pill.dimmed { opacity: 0.35; cursor: not-allowed; }
