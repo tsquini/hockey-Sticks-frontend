@@ -129,10 +129,11 @@ function ProductCard({ product, activeFilters, onAddToCart }) {
               <div className="price-bulk-label">{product.bulk_min_quantity}+ units to unlock bulk price</div>
               <div className="bulk-progress-wrap">
                 <div className="bulk-progress-bar">
-                  <div className="bulk-progress-fill" style={{ width: `${Math.min(100, Math.round(((product.bulk_ordered || 0) / product.bulk_min_quantity) * 100))}%` }} />
+                  <div className="bulk-progress-fill" style={{ width: `${Math.min(100, Math.round(((product.bulk_ordered_all || 0) / product.bulk_min_quantity) * 100))}%` }} />
                 </div>
                 <div className="bulk-progress-label">
-                  {product.bulk_ordered || 0} of {product.bulk_min_quantity} ordered
+                  <span>{product.bulk_ordered_all || 0} of {product.bulk_min_quantity} ordered across all teams</span>
+                  {(product.bulk_ordered_team || 0) > 0 && <span className="bulk-team-count"> · Your team: {product.bulk_ordered_team}</span>}
                 </div>
               </div>
             </>
@@ -180,7 +181,7 @@ export default function CatalogPage() {
   useEffect(() => { loadCart(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    getProducts().then(setProducts).catch(() => setError('Failed to load products. Please refresh.')).finally(() => setLoading(false));
+    getProducts(team?.id).then(setProducts).catch(() => setError('Failed to load products. Please refresh.')).finally(() => setLoading(false));
   }, []);
 
   function handleSignOut() { clearTeamSession(); navigate('/'); }
@@ -292,7 +293,7 @@ export default function CatalogPage() {
         .bulk-progress-bar { height: 6px; background: #e0e0e5; border-radius: 100px; overflow: hidden; margin-bottom: 4px; }
         .bulk-progress-fill { height: 100%; background: #0071e3; border-radius: 100px; transition: width 0.4s ease; }
         .bulk-progress-label { font-size: 11px; color: #6e6e73; font-weight: 500; }
-        .bulk-unlocked { color: #2e7d32; font-weight: 700; }
+        .bulk-unlocked { color: #2e7d32; font-weight: 700; } .bulk-team-count { color: #0071e3; font-weight: 600; }
         .product-variants-section { margin-bottom: 16px; flex: 1; }
         .variants-heading { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #aeaeb2; margin-bottom: 8px; }
         .variant-selector { display: flex; flex-direction: column; gap: 6px; }
