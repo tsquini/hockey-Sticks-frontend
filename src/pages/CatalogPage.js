@@ -201,13 +201,17 @@ export default function CatalogPage() {
     const s = new Set();
     products.forEach(p => {
       if (filters.category !== 'all' && p.category !== filters.category) return;
+      if (filters.stick_type !== 'all' && p.stick_type !== filters.stick_type) return;
       p.variants.forEach(v => {
         if (filters.hand !== 'all' && v.hand !== filters.hand) return;
+        const num = Number(v.flex);
+        if (filters.stick_type === 'goalie' && num >= 40) return;
+        if (filters.stick_type === 'player' && num < 40) return;
         s.add(v.flex);
       });
     });
     return [...s].sort((a, b) => Number(a) - Number(b));
-  }, [products, filters.category, filters.hand]);
+  }, [products, filters.category, filters.hand, filters.stick_type]);
 
   // Categories available given current flex + hand filters (ignoring category filter itself)
   const availableCategories = useMemo(() => {
