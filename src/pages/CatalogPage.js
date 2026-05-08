@@ -330,7 +330,7 @@ export default function CatalogPage() {
         .add-to-cart-btn:active:not(:disabled) { transform: scale(0.98); }
         .add-to-cart-btn:disabled { background: #e0e0e5; color: #aeaeb2; cursor: not-allowed; }
         .empty-state { text-align: center; padding: 60px 24px; color: #aeaeb2; font-size: 15px; }
-        @media (max-width: 600px) { .filter-bar { padding: 14px 16px; gap: 14px; } .catalog-body { padding: 28px 16px 80px; } .filter-group { flex-direction: column; align-items: flex-start; gap: 6px; } }
+        @media (max-width: 600px) { .filter-bar { padding: 10px 16px; } .filter-row { gap: 10px 16px; } .filter-group { border-right: none !important; padding-right: 0 !important; } .catalog-body { padding: 28px 16px 80px; } }
       `}</style>
       <div className="catalog-root">
         <header className="catalog-header">
