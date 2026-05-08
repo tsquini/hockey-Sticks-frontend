@@ -15,7 +15,7 @@ function FilterBar({ filters, setFilters, availableCategories, availableFlex }) 
         <span className="filter-label">Type</span>
         <div className="filter-pills">
           {['all', 'player', 'goalie'].map(t => (
-            <button key={t} className={} onClick={() => setFilters(f => ({ ...f, stick_type: t }))}>
+            <button key={t} className={`filter-pill ${filters.stick_type === t ? 'active' : ''}`} onClick={() => setFilters(f => ({ ...f, stick_type: t }))}>
               {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
