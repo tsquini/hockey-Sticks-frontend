@@ -181,8 +181,8 @@ export default function CatalogPage() {
   useEffect(() => { loadCart(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    getProducts(team?.id).then(setProducts).catch(() => setError('Failed to load products. Please refresh.')).finally(() => setLoading(false));
-  }, []);
+    getProducts(team?.id).then(setProducts).catch(() => setError('Failed to load products. Please refresh.')).finally(() => setLoading(false)); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSignOut() { clearTeamSession(); navigate('/'); }
 
