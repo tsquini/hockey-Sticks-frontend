@@ -15,3 +15,48 @@ export async function getProducts() {
   if (!res.ok) throw new Error('Failed to load products');
   return res.json();
 }
+
+export async function getCart(teamId, sessionId) {
+  const res = await fetch(`${API_URL}/public/cart?team_id=${teamId}&session_id=${sessionId}`);
+  if (!res.ok) throw new Error('Failed to get cart');
+  return res.json();
+}
+
+export async function addToCart(teamId, sessionId, variantId, quantity = 1) {
+  const res = await fetch(`${API_URL}/public/cart/add`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ team_id: teamId, session_id: sessionId, variant_id: variantId, quantity }),
+  });
+  if (!res.ok) throw new Error('Failed to add to cart');
+  return res.json();
+}
+
+export async function updateCartItem(itemId, quantity) {
+  const res = await fetch(`${API_URL}/public/cart/items/${itemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity }),
+  });
+  if (!res.ok) throw new Error('Failed to update cart item');
+  return res.json();
+}
+
+export async function removeCartItem(itemId) {
+  const res = await fetch(`${API_URL}/public/cart/items/${itemId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to remove cart item');
+  return res.json();
+}
+
+export async function checkout(data) {
+  const res = await fetch(`${API_URL}/public/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Checkout failed');
+  }
+  return res.json();
+}

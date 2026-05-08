@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProducts } from '../utils/api';
-import { getTeamSession, clearTeamSession } from '../utils/session';
+import { getProducts, addToCart, getCart } from '../utils/api';
+import { getTeamSession, clearTeamSession, getSessionId } from '../utils/session';
+import CartDrawer from '../components/CartDrawer';
 
 const CATEGORY_LABELS = { youth: 'Youth', intermediate: 'Intermediate', senior: 'Senior' };
 const CATEGORY_ORDER = ['youth', 'intermediate', 'senior'];
@@ -86,7 +87,7 @@ function VariantSelector({ variants, selected, onSelect }) {
   );
 }
 
-function ProductCard({ product, activeFilters }) {
+function ProductCard({ product, activeFilters, onAddToCart }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
 
   const visibleVariants = useMemo(() => product.variants.filter(v => {
@@ -112,7 +113,7 @@ function ProductCard({ product, activeFilters }) {
   return (
     <div className="product-card">
       <div className="product-img-wrap">
-        <img src={product.image_url || PLACEHOLDER_IMG} alt={product.name} className="product-img" onError={e => { e.target.src = PLACEHOLDER_IMG; }} />
+        <img src={product.image_url ? `${process.env.REACT_APP_API_URL}${product.image_url}` : PLACEHOLDER_IMG} alt={product.name} className="product-img" onError={e => { e.target.src = PLACEHOLDER_IMG; }} />
       </div>
       <div className="product-info">
         <p className="product-brand">{product.brand}</p>
@@ -144,6 +145,7 @@ function ProductCard({ product, activeFilters }) {
         <button
           className="add-to-cart-btn"
           disabled={!selectedVariant || selectedVariant.stock_quantity === 0}
+          onClick={() => selectedVariant && onAddToCart(selectedVariant.id)}
         >
           {!selectedVariant || selectedVariant.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
         </button>
@@ -157,8 +159,25 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({ category: 'all', hand: 'all', flex: 'all' });
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
   const team = getTeamSession();
+
+  async function loadCart() {
+    try {
+      const data = await getCart(team.id, getSessionId());
+      setCartItems(data.items || []);
+    } catch {}
+  }
+
+  async function handleAddToCart(variantId) {
+    await addToCart(team.id, getSessionId(), variantId);
+    await loadCart();
+    setCartOpen(true);
+  }
+
+  useEffect(() => { loadCart(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     getProducts().then(setProducts).catch(() => setError('Failed to load products. Please refresh.')).finally(() => setLoading(false));
@@ -238,6 +257,9 @@ export default function CatalogPage() {
         .header-team { font-size: 15px; font-weight: 600; color: #1a1a2e; }
         .signout-btn { font-size: 13px; color: #6e6e73; background: none; border: none; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; transition: background 0.12s; }
         .signout-btn:hover { background: #f0f0f5; color: #1a1a2e; }
+        .cart-btn { position: relative; background: none; border: none; cursor: pointer; color: #1a1a2e; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.12s; }
+        .cart-btn:hover { background: #f0f0f5; }
+        .cart-count { position: absolute; top: -2px; right: -2px; background: #0071e3; color: #fff; font-size: 10px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .filter-bar { background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 16px 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
         .filter-group { display: flex; align-items: center; gap: 10px; }
         .filter-label { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #aeaeb2; white-space: nowrap; }
@@ -301,7 +323,13 @@ export default function CatalogPage() {
             </div>
             <span className="header-team">{team?.name || 'Team Store'}</span>
           </div>
-          <button className="signout-btn" onClick={handleSignOut}>Sign out</button>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <button className="cart-btn" onClick={() => setCartOpen(true)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              {cartItems.length > 0 && <span className="cart-count">{cartItems.reduce((s,i) => s+i.quantity,0)}</span>}
+            </button>
+            <button className="signout-btn" onClick={handleSignOut}>Sign out</button>
+          </div>
         </header>
 
         <FilterBar
@@ -324,12 +352,13 @@ export default function CatalogPage() {
                 <span className="category-count">{items.length} {items.length === 1 ? 'product' : 'products'}</span>
               </h2>
               <div className="products-grid">
-                {items.map(p => <ProductCard key={p.id} product={p} activeFilters={filters} />)}
+                {items.map(p => <ProductCard key={p.id} product={p} activeFilters={filters} onAddToCart={handleAddToCart} />)}
               </div>
             </div>
           ))}
         </div>
       </div>
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cartItems} onCartUpdate={loadCart} />
     </>
   );
 }
