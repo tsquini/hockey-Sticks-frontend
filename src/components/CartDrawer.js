@@ -1,14 +1,87 @@
 import React, { useState } from 'react';
-import { updateCartItem, removeCartItem, checkout } from '../utils/api';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { updateCartItem, removeCartItem, createPaymentIntent, confirmCheckout } from '../utils/api';
 import { getTeamSession, getSessionId } from '../utils/session';
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+
+function CheckoutForm({ form, total, onSuccess, onBack }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+  const [cardError, setCardError] = useState('');
+  const team = getTeamSession();
+
+  async function handlePay() {
+    if (!stripe || !elements) return;
+    setLoading(true);
+    setCardError('');
+    try {
+      const { client_secret } = await createPaymentIntent({
+        team_id: team.id,
+        session_id: getSessionId(),
+        ...form,
+      });
+      const result = await stripe.confirmCardPayment(client_secret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+          billing_details: {
+            name: `${form.first_name} ${form.last_name}`,
+            email: form.email,
+            phone: form.phone || undefined,
+          },
+        },
+      });
+      if (result.error) {
+        setCardError(result.error.message);
+        setLoading(false);
+        return;
+      }
+      const order = await confirmCheckout({
+        team_id: team.id,
+        session_id: getSessionId(),
+        payment_intent_id: result.paymentIntent.id,
+        ...form,
+      });
+      onSuccess(order);
+    } catch (err) {
+      setCardError(err.message);
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <button className="back-btn" onClick={onBack}>← Back</button>
+      <div className="order-summary">
+        <span className="order-summary-label">Total due</span>
+        <span className="order-summary-total">${total.toFixed(2)}</span>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Card Details</label>
+        <div className="card-element-wrap">
+          <CardElement options={{
+            style: {
+              base: { fontSize: '15px', color: '#1a1a2e', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', '::placeholder': { color: '#aeaeb2' } },
+              invalid: { color: '#c0392b' },
+            }
+          }} />
+        </div>
+        {cardError && <div className="form-error">{cardError}</div>}
+      </div>
+      <button className="btn-primary" onClick={handlePay} disabled={loading || !stripe}>
+        {loading ? 'Processing…' : `Pay $${total.toFixed(2)}`}
+      </button>
+    </div>
+  );
+}
 
 export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
   const [screen, setScreen] = useState('cart');
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '' });
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(null);
-  const team = getTeamSession();
 
   const itemCount = cart.reduce((sum, i) => sum + i.quantity, 0);
   const total = cart.reduce((sum, i) => {
@@ -18,11 +91,8 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
 
   async function handleQtyChange(item, delta) {
     const newQty = item.quantity + delta;
-    if (newQty < 1) {
-      await removeCartItem(item.id);
-    } else {
-      await updateCartItem(item.id, newQty);
-    }
+    if (newQty < 1) await removeCartItem(item.id);
+    else await updateCartItem(item.id, newQty);
     onCartUpdate();
   }
 
@@ -39,25 +109,6 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email';
     setErrors(errs);
     return Object.keys(errs).length === 0;
-  }
-
-  async function handleCheckout() {
-    if (!validateForm()) return;
-    setLoading(true);
-    try {
-      const result = await checkout({
-        team_id: team.id,
-        session_id: getSessionId(),
-        ...form,
-      });
-      setOrder(result);
-      setScreen('confirm');
-      onCartUpdate();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
   }
 
   function handleClose() {
@@ -97,7 +148,7 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
         .cart-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
         .cart-total-label { font-size: 15px; color: #6e6e73; }
         .cart-total-val { font-size: 20px; font-weight: 700; color: #1a1a2e; }
-        .btn-primary { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #0071e3; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+        .btn-primary { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #0071e3; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; margin-top: 16px; }
         .btn-primary:hover:not(:disabled) { opacity: 0.88; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .form-group { margin-bottom: 16px; }
@@ -107,6 +158,10 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
         .form-input:focus { border-color: #0071e3; }
         .form-input.error { border-color: #c0392b; }
         .form-error { font-size: 12px; color: #c0392b; margin-top: 4px; }
+        .card-element-wrap { padding: 12px 14px; border-radius: 10px; border: 1.5px solid #e0e0e5; background: #fff; }
+        .order-summary { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; margin-bottom: 16px; border-bottom: 1px solid #f0f0f5; }
+        .order-summary-label { font-size: 15px; color: #6e6e73; }
+        .order-summary-total { font-size: 20px; font-weight: 700; color: #1a1a2e; }
         .confirm-wrap { text-align: center; padding: 40px 0; }
         .confirm-icon { width: 56px; height: 56px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 26px; }
         .confirm-title { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
@@ -120,7 +175,8 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
         <div className="drawer-header">
           <span className="drawer-title">
             {screen === 'cart' && `Cart${itemCount > 0 ? ` (${itemCount})` : ''}`}
-            {screen === 'checkout' && 'Your Details'}
+            {screen === 'details' && 'Your Details'}
+            {screen === 'payment' && 'Payment'}
             {screen === 'confirm' && 'Order Placed!'}
           </span>
           <button className="drawer-close" onClick={handleClose}>×</button>
@@ -134,7 +190,7 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
                   const price = item.bulk_min_quantity && item.team_price ? parseFloat(item.team_price) : parseFloat(item.retail_price || 0);
                   return (
                     <div key={item.id} className="cart-item">
-                      <img src={item.image_url ? `${process.env.REACT_APP_API_URL}${item.image_url}` : ""} alt={item.name} className="cart-item-img" onError={e => { e.target.style.display = 'none'; }} />
+                      <img src={item.image_url ? `${process.env.REACT_APP_API_URL}${item.image_url}` : ''} alt={item.name} className="cart-item-img" onError={e => { e.target.style.display = 'none'; }} />
                       <div className="cart-item-info">
                         <div className="cart-item-name">{item.brand} {item.name}</div>
                         <div className="cart-item-variant">Flex {item.flex} · {item.hand === 'left' ? 'Left' : 'Right'} · {item.blade_curve}</div>
@@ -151,7 +207,7 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
                 })
           )}
 
-          {screen === 'checkout' && (
+          {screen === 'details' && (
             <>
               <button className="back-btn" onClick={() => setScreen('cart')}>← Back to cart</button>
               <div className="form-row">
@@ -178,12 +234,23 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
             </>
           )}
 
+          {screen === 'payment' && (
+            <Elements stripe={stripePromise}>
+              <CheckoutForm
+                form={form}
+                total={total}
+                onSuccess={(o) => { setOrder(o); setScreen('confirm'); onCartUpdate(); }}
+                onBack={() => setScreen('details')}
+              />
+            </Elements>
+          )}
+
           {screen === 'confirm' && (
             <div className="confirm-wrap">
               <div className="confirm-icon">✓</div>
               <div className="confirm-title">Order received!</div>
               <div className="confirm-total">${order?.total?.toFixed(2)}</div>
-              <div className="confirm-sub">Thanks {form.first_name}! Your order has been placed. You'll hear from us soon.</div>
+              <div className="confirm-sub">Thanks {form.first_name}! Your order has been placed and payment confirmed.</div>
             </div>
           )}
         </div>
@@ -195,12 +262,12 @@ export default function CartDrawer({ open, onClose, cart, onCartUpdate }) {
                 <span className="cart-total-label">Total</span>
                 <span className="cart-total-val">${total.toFixed(2)}</span>
               </div>
-              <button className="btn-primary" onClick={() => setScreen('checkout')}>Checkout →</button>
+              <button className="btn-primary" onClick={() => setScreen('details')}>Checkout →</button>
             </>
           )}
-          {screen === 'checkout' && (
-            <button className="btn-primary" onClick={handleCheckout} disabled={loading}>
-              {loading ? 'Placing order…' : 'Place Order →'}
+          {screen === 'details' && (
+            <button className="btn-primary" onClick={() => { if (validateForm()) setScreen('payment'); }}>
+              Continue to Payment →
             </button>
           )}
           {screen === 'confirm' && (

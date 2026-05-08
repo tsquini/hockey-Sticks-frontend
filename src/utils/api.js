@@ -48,8 +48,21 @@ export async function removeCartItem(itemId) {
   return res.json();
 }
 
-export async function checkout(data) {
-  const res = await fetch(`${API_URL}/public/checkout`, {
+export async function createPaymentIntent(data) {
+  const res = await fetch(`${API_URL}/public/checkout/intent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to create payment');
+  }
+  return res.json();
+}
+
+export async function confirmCheckout(data) {
+  const res = await fetch(`${API_URL}/public/checkout/confirm`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
