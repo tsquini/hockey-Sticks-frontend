@@ -169,7 +169,7 @@ export default function CatalogPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({ category: 'all', hand: 'all', flex: 'all', stick_type: 'all' });
+  const [filters, setFilters] = useState({ category: 'all', hand: 'all', flex: 'all', stick_type: 'all', brand: 'all' });
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
@@ -213,6 +213,12 @@ export default function CatalogPage() {
     return [...s].sort((a, b) => Number(a) - Number(b));
   }, [products, filters.category, filters.hand, filters.stick_type]);
 
+  const allBrands = useMemo(() => {
+    const s = new Set();
+    products.forEach(p => s.add(p.brand));
+    return [...s].sort();
+  }, [products]);
+
   // Categories available given current flex + hand filters (ignoring category filter itself)
   const availableCategories = useMemo(() => {
     const cats = new Set();
@@ -244,6 +250,7 @@ export default function CatalogPage() {
   const filtered = useMemo(() => products.filter(p => {
     if (filters.category !== 'all' && p.category !== filters.category) return false;
     if (filters.stick_type !== 'all' && p.stick_type !== filters.stick_type) return false;
+    if (filters.brand !== 'all' && p.brand !== filters.brand) return false;
     return p.variants.some(v => {
       if (filters.hand !== 'all' && v.hand !== filters.hand) return false;
       if (filters.flex !== 'all' && String(v.flex) !== String(filters.flex)) return false;
@@ -276,7 +283,7 @@ export default function CatalogPage() {
         .cart-btn { position: relative; background: none; border: none; cursor: pointer; color: #1a1a2e; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.12s; }
         .cart-btn:hover { background: #f0f0f5; }
         .cart-count { position: absolute; top: -2px; right: -2px; background: #0071e3; color: #fff; font-size: 10px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .filter-bar { background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start; }
+        .filter-bar { background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 12px 24px; display: flex; flex-direction: column; gap: 0; } .filter-row { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start; padding: 8px 0; } .filter-row:first-child { border-bottom: 1px solid #f0f0f5; }
         .filter-group { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-right: 24px; border-right: 1px solid #e0e0e5; } .filter-group:last-child { border-right: none; }
         .filter-label { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #aeaeb2; white-space: nowrap; }
         .filter-pills { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -355,6 +362,7 @@ export default function CatalogPage() {
           setFilters={setFilters}
           availableCategories={availableCategories}
           availableFlex={availableFlex}
+          allBrands={allBrands}
         />
 
         <div className="catalog-body">
