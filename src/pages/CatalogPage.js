@@ -276,8 +276,8 @@ export default function CatalogPage() {
         .cart-btn { position: relative; background: none; border: none; cursor: pointer; color: #1a1a2e; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.12s; }
         .cart-btn:hover { background: #f0f0f5; }
         .cart-count { position: absolute; top: -2px; right: -2px; background: #0071e3; color: #fff; font-size: 10px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .filter-bar { background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 16px 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
-        .filter-group { display: flex; align-items: center; gap: 10px; }
+        .filter-bar { background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start; }
+        .filter-group { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
         .filter-label { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #aeaeb2; white-space: nowrap; }
         .filter-pills { display: flex; flex-wrap: wrap; gap: 6px; }
         .filter-pill { padding: 2px .6vw; border-radius: 100px; border: 1.5px solid #e0e0e5; background: #fff; font-size: 12px; font-weight: 500; color: #3a3a3c; cursor: pointer; transition: all 0.12s; font-family: inherit; }
